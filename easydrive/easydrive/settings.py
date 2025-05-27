@@ -80,6 +80,7 @@ DATABASES = {
         'PASSWORD': 'securepassword123',
         'HOST': 'localhost',
         'PORT': '1509',
+        
     }
 }
 
