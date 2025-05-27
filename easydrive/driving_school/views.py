@@ -1,7 +1,8 @@
+from django.contrib import messages
+from django.shortcuts import redirect
 from django.db import connection
 from django.db import transaction
 from datetime import date
-from django.db import connection
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required, permission_required
 from .models import *
@@ -148,7 +149,7 @@ def create_triggers():
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from .models import Client
-from .forms import ClientForm
+from .forms import ClientForm, LessonForm
 
 class ClientListView(ListView):
     model = Client
@@ -269,3 +270,36 @@ def reports_view(request):
     }
     return render(request, 'reports.html', context)
 
+# Siempre usar parámetros en consultas SQL
+def safe_query(request):
+    search = request.GET.get('search')
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT * FROM clients WHERE name = %s", [search])
+
+def home(request):
+    return render(request, 'base.html')
+
+def dashboard(request):
+    return render(request, 'dashboard.html')
+
+from django.views.generic import ListView
+from .models import Lesson
+
+class LessonListView(ListView):
+    model = Lesson
+    template_name = 'lesson_list.html'
+    context_object_name = 'lessons'
+
+from django.views.generic import ListView
+from .models import Exam
+
+class ExamListView(ListView):
+    model = Exam
+    template_name = 'exam_list.html'
+    context_object_name = 'exams'
+    ordering = ['-date']  # Ordenar por fecha descendente
+
+class VehicleListView(ListView):
+    model = Vehicle
+    template_name = 'vehicle_list.html'
+    context_object_name = 'vehicles'
