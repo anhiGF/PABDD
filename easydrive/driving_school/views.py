@@ -144,4 +144,128 @@ def create_triggers():
             EXECUTE FUNCTION log_lesson_registration();
         """)
 
-        
+#cliente
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.urls import reverse_lazy
+from .models import Client
+from .forms import ClientForm
+
+class ClientListView(ListView):
+    model = Client
+    template_name = 'client_list.html'
+    context_object_name = 'clients'
+    paginate_by = 10
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        search = self.request.GET.get('search')
+        if search:
+            queryset = queryset.filter(
+                models.Q(first_name__icontains=search) | 
+                models.Q(last_name__icontains=search) |
+                models.Q(email__icontains=search))
+        return queryset
+
+class ClientCreateView(CreateView):
+    model = Client
+    form_class = ClientForm
+    template_name = 'client_form.html'
+    success_url = reverse_lazy('client_list')
+    
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, 'Cliente creado exitosamente')
+        return response
+
+class ClientUpdateView(UpdateView):
+    model = Client
+    form_class = ClientForm
+    template_name = 'client_form.html'
+    success_url = reverse_lazy('client_list')
+    
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, 'Cliente actualizado exitosamente')
+        return response
+
+class ClientDeleteView(DeleteView):
+    model = Client
+    template_name = 'client_confirm_delete.html'
+    success_url = reverse_lazy('client_list')
+    
+    def delete(self, request, *args, **kwargs):
+        response = super().delete(request, *args, **kwargs)
+        messages.success(request, 'Cliente eliminado exitosamente')
+        return response
+    
+# driving_school/views.py
+from django.db.models import Count, Sum, Case, When, IntegerField
+from django.db.models.functions import TruncDate
+import matplotlib.pyplot as plt
+import io
+import urllib, base64
+
+def reports_view(request):
+    # Reporte 1: Lecciones por cliente
+    lessons_by_client = Client.objects.annotate(
+        total_lessons=Count('lesson'),
+        total_kilometers=Sum('lesson__kilometers')
+    ).order_by('-total_lessons')[:10]
+    
+    # Reporte 2: Agenda del día
+    today_lessons = Lesson.objects.filter(date=date.today()).order_by('time')
+    
+    # Reporte 3: Aprobados y reprobados por instructor
+    exam_stats = Employee.objects.filter(
+        role__in=['Instructor', 'Instructor Senior']
+    ).annotate(
+        approved=Count(
+            Case(
+                When(exam__result=True, then=1),
+                output_field=IntegerField()
+            )
+        ),
+        failed=Count(
+            Case(
+                When(exam__result=False, then=1),
+                output_field=IntegerField()
+            )
+        )
+    ).order_by('-approved')
+    
+    # Gráfica 1: Lecciones por mes
+    lessons_by_month = Lesson.objects.annotate(
+        month=TruncDate('date', 'month')
+    ).values('month').annotate(
+        count=Count('id_lesson')
+    ).order_by('month')
+    
+    # Crear gráfica
+    months = [l['month'].strftime('%Y-%m') for l in lessons_by_month]
+    counts = [l['count'] for l in lessons_by_month]
+    
+    plt.figure(figsize=(10, 5))
+    plt.bar(months, counts)
+    plt.title('Lecciones por mes')
+    plt.xlabel('Mes')
+    plt.ylabel('Número de lecciones')
+    plt.xticks(rotation=45)
+    
+    # Convertir gráfica a imagen
+    buffer = io.BytesIO()
+    plt.savefig(buffer, format='png')
+    buffer.seek(0)
+    image_png = buffer.getvalue()
+    buffer.close()
+    
+    graphic = base64.b64encode(image_png)
+    graphic = graphic.decode('utf-8')
+    
+    context = {
+        'lessons_by_client': lessons_by_client,
+        'today_lessons': today_lessons,
+        'exam_stats': exam_stats,
+        'graphic': graphic,
+    }
+    return render(request, 'reports.html', context)
+
