@@ -120,3 +120,28 @@ def create_stored_procedures():
             $$;
         """)
 
+def create_triggers():
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            CREATE OR REPLACE FUNCTION log_lesson_registration()
+            RETURNS TRIGGER AS $$
+            BEGIN
+                INSERT INTO driving_school_lessonlog (
+                    lesson_id, registration_date
+                )
+                VALUES (
+                    NEW.id_lesson, NOW()
+                );
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+        """)
+        
+        cursor.execute("""
+            CREATE TRIGGER trg_log_lesson
+            AFTER INSERT ON driving_school_lesson
+            FOR EACH ROW
+            EXECUTE FUNCTION log_lesson_registration();
+        """)
+
+        
