@@ -1,0 +1,57 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">
+                {% if object %}Editar{% else %}Crear{% endif %} Cliente
+            </h5>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    {{ form.first_name.label_tag }}
+                    {{ form.first_name }}
+                    {% if form.first_name.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.first_name.errors|join:", " }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.last_name.label_tag }}
+                    {{ form.last_name }}
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.phone.label_tag }}
+                    {{ form.phone }}
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.email.label_tag }}
+                    {{ form.email }}
+                </div>
+                
+                <div class="mb-3 form-check">
+                    {{ form.provisional_license }}
+                    {{ form.provisional_license.label_tag }}
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.branch.label_tag }}
+                    {{ form.branch }}
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    {% if object %}Actualizar{% else %}Crear{% endif %}
+                </button>
+                <a href="{% url 'client_list' %}" class="btn btn-secondary">Cancelar</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

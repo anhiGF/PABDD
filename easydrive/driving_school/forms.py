@@ -18,13 +18,20 @@ class ClientForm(forms.ModelForm):
             'provisional_license': 'Permiso provisional válido',
         }
     
-    def clean_email(self):
-        email = self.cleaned_data.get('email')
-        if Client.objects.filter(email=email).exclude(pk=self.instance.pk).exists():
-            raise forms.ValidationError("Este correo electrónico ya está registrado")
-        return email
-    
-# En forms.py
+from .models import Branch
+
+class BranchForm(forms.ModelForm):
+    class Meta:
+        model = Branch
+        fields = ['name', 'city', 'address']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'city': forms.TextInput(attrs={'class': 'form-control'}),
+            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
+
+# leccion
 class LessonForm(forms.ModelForm):
     class Meta:
         model = Lesson

@@ -23,13 +23,13 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
     path('dashboard/', views.dashboard, name='dashboard'),
-    path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
+    path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     
-    # CRUD URLs
+    # CRUD clientes
     path('clients/', views.ClientListView.as_view(), name='client_list'),
-    path('clients/add/', views.ClientCreateView.as_view(), name='client_create'),
-    path('clients/<int:pk>/edit/', views.ClientUpdateView.as_view(), name='client_update'),
+    path('clients/create/', views.ClientCreateView.as_view(), name='client_create'),
+    path('clients/<int:pk>/update/', views.ClientUpdateView.as_view(), name='client_update'),
     path('clients/<int:pk>/delete/', views.ClientDeleteView.as_view(), name='client_delete'),
     
     # Reportes
@@ -37,4 +37,12 @@ urlpatterns = [
     path('lessons/', views.LessonListView.as_view(), name='lesson_list'),
     path('exams/', views.ExamListView.as_view(), name='exam_list'),
     path('vehicles/', views.VehicleListView.as_view(), name='vehicle_list'),
+    path('profile/', views.profile_view, name='profile'),
+     path('employees/', views.EmployeeListView.as_view(), name='employee_list'),
+
+     # CRUD sucursales
+    path('branch/', views.BranchListView.as_view(), name='branch_list'),
+    path('branch/create/', views.BranchCreateView.as_view(), name='branch_create'),
+    path('branch/<int:pk>/update/', views.BranchUpdateView.as_view(), name='branch_update'),
+    path('branch/<int:pk>/delete/', views.BranchDeleteView.as_view(), name='branch_delete'),
 ]

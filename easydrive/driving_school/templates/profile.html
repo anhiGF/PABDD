@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Mi Perfil</h2>
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Información del Usuario</h5>
+            <p><strong>Nombre de usuario:</strong> {{ user.username }}</p>
+            <p><strong>Nombre completo:</strong> {{ user.get_full_name }}</p>
+            <p><strong>Email:</strong> {{ user.email }}</p>
+            <!-- Agrega más campos según tu modelo CustomUser -->
+        </div>
+    </div>
+</div>
+{% endblock %}

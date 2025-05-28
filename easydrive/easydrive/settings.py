@@ -37,6 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'driving_school.apps.DrivingSchoolConfig',
+    'crispy_forms',
+    'crispy_bootstrap5',
 ]
 
 MIDDLEWARE = [
@@ -130,8 +132,7 @@ AUTH_USER_MODEL = 'driving_school.CustomUser'
 
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
-LOGOUT_REDIRECT_URL = 'home'
-
+LOGOUT_REDIRECT_URL = 'login' 
 # Security settings
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
@@ -145,3 +146,5 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Ruta donde se recolectar√
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),  # Directorio donde colocas tus archivos est√°ticos
 ]
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"

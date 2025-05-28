@@ -1,3 +1,4 @@
+from venv import logger
 from django.contrib import messages
 from django.shortcuts import redirect
 from django.db import connection
@@ -6,6 +7,7 @@ from datetime import date
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required, permission_required
 from .models import *
+from django.db.models.functions import TruncMonth
 
 @login_required
 def client_instructor_branch_view(request):
@@ -148,6 +150,7 @@ def create_triggers():
 #cliente
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
+from django.contrib.messages.views import SuccessMessageMixin
 from .models import Client
 from .forms import ClientForm, LessonForm
 
@@ -156,48 +159,25 @@ class ClientListView(ListView):
     template_name = 'client_list.html'
     context_object_name = 'clients'
     paginate_by = 10
-    
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        search = self.request.GET.get('search')
-        if search:
-            queryset = queryset.filter(
-                models.Q(first_name__icontains=search) | 
-                models.Q(last_name__icontains=search) |
-                models.Q(email__icontains=search))
-        return queryset
 
-class ClientCreateView(CreateView):
+class ClientCreateView(SuccessMessageMixin, CreateView):
     model = Client
     form_class = ClientForm
     template_name = 'client_form.html'
     success_url = reverse_lazy('client_list')
-    
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        messages.success(self.request, 'Cliente creado exitosamente')
-        return response
+    success_message = "Cliente creado exitosamente"
 
-class ClientUpdateView(UpdateView):
+class ClientUpdateView(SuccessMessageMixin, UpdateView):
     model = Client
     form_class = ClientForm
     template_name = 'client_form.html'
     success_url = reverse_lazy('client_list')
-    
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        messages.success(self.request, 'Cliente actualizado exitosamente')
-        return response
+    success_message = "Cliente actualizado exitosamente"
 
 class ClientDeleteView(DeleteView):
     model = Client
     template_name = 'client_confirm_delete.html'
     success_url = reverse_lazy('client_list')
-    
-    def delete(self, request, *args, **kwargs):
-        response = super().delete(request, *args, **kwargs)
-        messages.success(request, 'Cliente eliminado exitosamente')
-        return response
     
 # driving_school/views.py
 from django.db.models import Count, Sum, Case, When, IntegerField
@@ -206,69 +186,86 @@ import matplotlib.pyplot as plt
 import io
 import urllib, base64
 
+@login_required
 def reports_view(request):
-    # Reporte 1: Lecciones por cliente
-    lessons_by_client = Client.objects.annotate(
-        total_lessons=Count('lesson'),
-        total_kilometers=Sum('lesson__kilometers')
-    ).order_by('-total_lessons')[:10]
-    
-    # Reporte 2: Agenda del día
-    today_lessons = Lesson.objects.filter(date=date.today()).order_by('time')
-    
-    # Reporte 3: Aprobados y reprobados por instructor
-    exam_stats = Employee.objects.filter(
-        role__in=['Instructor', 'Instructor Senior']
-    ).annotate(
-        approved=Count(
-            Case(
-                When(exam__result=True, then=1),
-                output_field=IntegerField()
+    """
+    Generate and display various reports and statistics about driving school operations.
+    Includes lessons by client, today's schedule, exam results by instructor, and monthly lesson trends.
+    """
+    try:
+        # Report 1: Top 10 clients by number of lessons
+        lessons_by_client = Client.objects.annotate(
+            total_lessons=Count('lesson'),
+            total_kilometers=Sum('lesson__kilometers')
+        ).order_by('-total_lessons')[:10]
+        
+        # Report 2: Today's schedule
+        today_lessons = Lesson.objects.filter(date=date.today()).select_related(
+            'client', 'instructor__user', 'vehicle'
+        ).order_by('time')
+        
+        # Report 3: Exam results by instructor
+        exam_stats = Employee.objects.filter(
+            role__in=['Instructor', 'Instructor Senior']
+        ).annotate(
+            approved=Count(
+                Case(
+                    When(exam__result=True, then=1),
+                    output_field=IntegerField()
+                )
+            ),
+            failed=Count(
+                Case(
+                    When(exam__result=False, then=1),
+                    output_field=IntegerField()
+                )
             )
-        ),
-        failed=Count(
-            Case(
-                When(exam__result=False, then=1),
-                output_field=IntegerField()
-            )
-        )
-    ).order_by('-approved')
-    
-    # Gráfica 1: Lecciones por mes
-    lessons_by_month = Lesson.objects.annotate(
-        month=TruncDate('date', 'month')
-    ).values('month').annotate(
-        count=Count('id_lesson')
-    ).order_by('month')
-    
-    # Crear gráfica
-    months = [l['month'].strftime('%Y-%m') for l in lessons_by_month]
-    counts = [l['count'] for l in lessons_by_month]
-    
-    plt.figure(figsize=(10, 5))
-    plt.bar(months, counts)
-    plt.title('Lecciones por mes')
-    plt.xlabel('Mes')
-    plt.ylabel('Número de lecciones')
-    plt.xticks(rotation=45)
-    
-    # Convertir gráfica a imagen
-    buffer = io.BytesIO()
-    plt.savefig(buffer, format='png')
-    buffer.seek(0)
-    image_png = buffer.getvalue()
-    buffer.close()
-    
-    graphic = base64.b64encode(image_png)
-    graphic = graphic.decode('utf-8')
-    
-    context = {
-        'lessons_by_client': lessons_by_client,
-        'today_lessons': today_lessons,
-        'exam_stats': exam_stats,
-        'graphic': graphic,
-    }
-    return render(request, 'reports.html', context)
+        ).order_by('-approved')
+        
+        # Generate monthly lesson chart
+        plt.switch_backend('Agg')
+        lessons_by_month = Lesson.objects.annotate(
+            month=TruncMonth('date')
+        ).values('month').annotate(
+            count=Count('id_lesson')  
+        ).order_by('month')
+        
+        if lessons_by_month:
+            months = [l['month'].strftime('%Y-%m') for l in lessons_by_month]
+            counts = [l['count'] for l in lessons_by_month]
+            
+            plt.figure(figsize=(10, 5))
+            plt.bar(months, counts)
+            plt.title('Lecciones por mes')
+            plt.xlabel('Mes')
+            plt.ylabel('Número de lecciones')
+            plt.xticks(rotation=45)
+            plt.tight_layout()
+            
+            # Convert plot to PNG image
+            buffer = io.BytesIO()
+            plt.savefig(buffer, format='png')
+            buffer.seek(0)
+            image_png = buffer.getvalue()
+            buffer.close()
+            plt.close()
+            
+            graphic = base64.b64encode(image_png).decode('utf-8')
+        else:
+            graphic = None
+            
+        context = {
+            'lessons_by_client': lessons_by_client,
+            'today_lessons': today_lessons,
+            'exam_stats': exam_stats,
+            'graphic': graphic,
+        }
+        return render(request, 'reports.html', context)
+        
+    except Exception as e:
+        logger.error(f"Error generating reports: {str(e)}")
+        messages.error(request, "Error generating reports. Please try again later.")
+        return redirect('dashboard')
 
 # Siempre usar parámetros en consultas SQL
 def safe_query(request):
@@ -279,8 +276,14 @@ def safe_query(request):
 def home(request):
     return render(request, 'base.html')
 
+@login_required
 def dashboard(request):
-    return render(request, 'dashboard.html')
+    context = {
+        'client_count': Client.objects.count(),
+        'lessons_today': Lesson.objects.filter(date=date.today()).count(),
+        'pending_exams': Exam.objects.filter(result__isnull=True).count(),
+    }
+    return render(request, 'dashboard.html', context)
 
 from django.views.generic import ListView
 from .models import Lesson
@@ -303,3 +306,52 @@ class VehicleListView(ListView):
     model = Vehicle
     template_name = 'vehicle_list.html'
     context_object_name = 'vehicles'
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+
+@login_required
+def profile_view(request):
+    return render(request, 'profile.html', {
+        'user': request.user
+    })
+
+from .models import Branch
+from .forms import BranchForm  
+
+class BranchListView(ListView):
+    model = Branch
+    template_name = 'branch_list.html'
+    context_object_name = 'branches'
+    paginate_by = 10
+
+class BranchCreateView(SuccessMessageMixin, CreateView):
+    model = Branch
+    form_class = BranchForm
+    template_name = 'branch_form.html'
+    success_url = reverse_lazy('branch_list')
+    success_message = "Sucursal creada exitosamente"
+
+class BranchUpdateView(SuccessMessageMixin, UpdateView):
+    model = Branch
+    form_class = BranchForm
+    template_name = 'branch_form.html'
+    success_url = reverse_lazy('branch_list')
+    success_message = "Sucursal actualizada exitosamente"
+
+class BranchDeleteView(DeleteView):
+    model = Branch
+    template_name = 'branch_confirm_delete.html'
+    success_url = reverse_lazy('branch_list')
+
+from django.views.generic import ListView
+from .models import Employee
+
+class EmployeeListView(ListView):
+    model = Employee
+    template_name = 'employee_list.html'
+    context_object_name = 'employees'
+    
+    def get_queryset(self):
+        return Employee.objects.select_related('user', 'branch')
+    
