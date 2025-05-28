@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ report_title }}</h1>
+        
+        <div>
+            <a href="?{{ request.GET.urlencode }}&export=pdf" 
+               class="btn btn-danger">
+                <i class="fas fa-file-pdf"></i> Exportar a PDF
+            </a>
+        </div>
+    </div>
+    
+    <!-- Mostrar filtros aplicados -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Filtros aplicados</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% if form.cleaned_data.start_date %}
+                <div class="col-md-3">
+                    <strong>Desde:</strong> {{ form.cleaned_data.start_date }}
+                </div>
+                {% endif %}
+                
+                {% if form.cleaned_data.end_date %}
+                <div class="col-md-3">
+                    <strong>Hasta:</strong> {{ form.cleaned_data.end_date }}
+                </div>
+                {% endif %}
+                
+                {% if form.cleaned_data.branch %}
+                <div class="col-md-3">
+                    <strong>Sucursal:</strong> {{ form.cleaned_data.branch }}
+                </div>
+                {% endif %}
+                
+                {% if form.cleaned_data.instructor %}
+                <div class="col-md-3">
+                    <strong>Instructor:</strong> {{ form.cleaned_data.instructor }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Resultados del reporte -->
+    <div class="card">
+        <div class="card-body">
+            {% if report_type == 'client_progress' %}
+                {% include 'reports/partials/client_progress.html' %}
+            {% elif report_type == 'vehicle_usage' %}
+                {% include 'reports/partials/vehicle_usage.html' %}
+            {% elif report_type == 'instructor_hours' %}
+                {% include 'reports/partials/instructor_hours.html' %}
+            {% elif report_type == 'scheduled_lessons' %}
+                {% include 'reports/partials/scheduled_lessons.html' %}
+            {% elif report_type == 'client_instructor' %}
+                {% include 'reports/partials/client_instructor.html' %}
+            {% endif %}
+            
+            <!-- Paginación -->
+            {% if data.paginator.num_pages > 1 %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if data.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            &laquo; Primera
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ data.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Anterior
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            Página {{ data.number }} de {{ data.paginator.num_pages }}
+                        </span>
+                    </li>
+                    
+                    {% if data.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ data.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Siguiente
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ data.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Última &raquo;
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

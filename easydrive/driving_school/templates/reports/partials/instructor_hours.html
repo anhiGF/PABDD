@@ -1,0 +1,32 @@
+<div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>ID Instructor</th>
+                            <th>Nombre</th>
+                            <th>Total Lecciones</th>
+                            <th>Duración Promedio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in data %}
+                        <tr>
+                            <td>{{ instructor.id_employee }}</td>
+                            <td>{{ instructor.first_name }} {{ instructor.last_name }}</td>
+                            <td>{{ instructor.lesson_count }}</td>
+                            <td>{{ instructor.avg_duration|floatformat:1 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center">No se encontraron resultados</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+        </div>
+    </div>
+</div>

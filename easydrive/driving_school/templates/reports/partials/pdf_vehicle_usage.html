@@ -1,0 +1,26 @@
+<table>
+    <thead>
+        <tr>
+            <th>ID Vehículo</th>
+            <th>Placa</th>
+            <th>Modelo</th>
+            <th>Año</th>
+            <th>Total Lecciones</th>
+            <th>Total Km</th>
+            <th>Km Promedio</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in data %}
+        <tr>
+            <td>{{ item.id_vehicle }}</td>
+            <td>{{ item.plate_number }}</td>
+            <td>{{ item.model }}</td>
+            <td>{{ item.year }}</td>
+            <td>{{ item.total_lessons|default:"0" }}</td>
+            <td>{{ item.total_kilometers|default:"0"|floatformat:2 }} km</td>
+            <td>{{ item.avg_kilometers_per_lesson|default:"0"|floatformat:2 }} km</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

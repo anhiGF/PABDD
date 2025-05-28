@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-6=xjfq(+7)nr1uth%ox-v(tj_i39*ag1t+d3l$*c&eno3nq7j*'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True  
+DEBUG = False  
 ALLOWED_HOSTS = ['*']  
 
 # Application definition
@@ -148,3 +148,10 @@ STATICFILES_DIRS = [
 ]
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
+
+# Configuración para WeasyPrint
+WEASYPRINT_BASEURL = 'http://localhost:8000' 
+
+# Para manejar archivos estáticos
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')

@@ -1,0 +1,26 @@
+<table>
+    <thead>
+        <tr>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Cliente</th>
+            <th>Instructor</th>
+            <th>Vehículo</th>
+            <th>Tipo</th>
+            <th>Sucursal</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for lesson in data %}
+        <tr>
+            <td>{{ lesson.date|date:"d/m/Y" }}</td>
+            <td>{{ lesson.time|time:"H:i" }}</td>
+            <td>{{ lesson.client.first_name }} {{ lesson.client.last_name }}</td>
+            <td>{{ lesson.instructor.user.first_name }} {{ lesson.instructor.user.last_name }}</td>
+            <td>{{ lesson.vehicle.model }} ({{ lesson.vehicle.plate_number }})</td>
+            <td>{{ lesson.get_type_display }}</td>
+            <td>{{ lesson.branch.name }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

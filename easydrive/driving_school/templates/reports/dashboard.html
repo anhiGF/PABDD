@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h1 class="my-4">Sistema de Reportes</h1>
+    <a href="{% url 'home' %}" class="btn btn-secondary me-md-2">Volver</a>
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h2>Seleccione el tipo de reporte</h2>
+        </div>
+        
+        <div class="card-body">
+            <div class="list-group">
+                {% for report in report_types %}
+                <a href="{% url 'report_view' report_type=report.id %}" 
+                   class="list-group-item list-group-item-action">
+                    {{ report.name }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ report_title }}</title>
+    <style>
+        /* Estilos compatibles con WeasyPrint */
+        @page {
+            size: A4;
+            margin: 1.5cm;
+            
+            @top-center {
+                content: "{{ report_title }}";
+                font-size: 14pt;
+                font-weight: bold;
+            }
+            
+            @bottom-center {
+                content: "Página " counter(page) " de " counter(pages);
+                font-size: 10pt;
+            }
+        }
+        
+        body {
+            font-family: "Helvetica", Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            font-size: 16pt;
+            text-align: center;
+            margin-bottom: 20pt;
+        }
+        
+        .header-info {
+            margin-bottom: 15pt;
+            padding-bottom: 5pt;
+            border-bottom: 1pt solid #ddd;
+            font-size: 9pt;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15pt;
+        }
+        
+        th {
+            background-color: #3498db;
+            color: white;
+            text-align: left;
+            padding: 5pt;
+            font-weight: bold;
+        }
+        
+        td {
+            padding: 5pt;
+            border-bottom: 1pt solid #ddd;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f8f8f8;
+        }
+        
+        .footer {
+            font-size: 8pt;
+            text-align: center;
+            margin-top: 20pt;
+            color: #666;
+            border-top: 1pt solid #ddd;
+            padding-top: 5pt;
+        }
+    </style>
+</head>
+<body>
+    <h1>{{ report_title }}</h1>
+    
+    <div class="header-info">
+        <p><strong>Generado el:</strong> {% now "d/m/Y H:i" %}</p>
+        
+        {% if form.cleaned_data.start_date or form.cleaned_data.end_date %}
+        <p>
+            <strong>Rango de fechas:</strong> 
+            {% if form.cleaned_data.start_date %}
+                Desde {{ form.cleaned_data.start_date|date:"d/m/Y" }}
+            {% endif %}
+            {% if form.cleaned_data.end_date %}
+                hasta {{ form.cleaned_data.end_date|date:"d/m/Y" }}
+            {% endif %}
+        </p>
+        {% endif %}
+        
+        {% if form.cleaned_data.branch %}
+        <p><strong>Sucursal:</strong> {{ form.cleaned_data.branch.name }}</p>
+        {% endif %}
+        
+        {% if form.cleaned_data.instructor %}
+        <p><strong>Instructor:</strong> {{ form.cleaned_data.instructor.user.get_full_name }}</p>
+        {% endif %}
+    </div>
+    
+    {% if report_type == 'client_progress' %}
+        {% include 'reports/partials/pdf_client_progress.html' %}
+    {% elif report_type == 'vehicle_usage' %}
+        {% include 'reports/partials/pdf_vehicle_usage.html' %}
+    {% elif report_type == 'instructor_hours' %}
+        {% include 'reports/partials/pdf_instructor_hours.html' %}
+    {% elif report_type == 'scheduled_lessons' %}
+        {% include 'reports/partials/pdf_scheduled_lessons.html' %}
+    {% elif report_type == 'client_instructor' %}
+        {% include 'reports/partials/pdf_client_instructor.html' %}
+    {% endif %}
+    
+    <div class="footer">
+        Reporte generado por el Sistema de Gestión de Escuela de Conducción
+    </div>
+</body>
+</html>

@@ -1,14 +1,16 @@
-from venv import logger
 from django.contrib import messages
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import redirect
 from django.db import connection
 from django.db import transaction
-from datetime import date
+from datetime import date, datetime
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required, permission_required
+from django.conf import settings
 from .models import *
-from django.db.models.functions import TruncMonth
 
+# ======================================================================
+# VISTAS PARA FUNCIONALIDADES ESPECÍFICAS
+# ======================================================================
 @login_required
 def client_instructor_branch_view(request):
     with connection.cursor() as cursor:
@@ -78,6 +80,13 @@ def register_lesson(request):
     
     return render(request, 'register_lesson.html', {'form': form})
 
+# ======================================================================
+# PROCEDIMIENTOS ALMACENADOS Y TRIGGERS
+# ======================================================================
+"""
+    Función para crear procedimientos almacenados en la base de datos.
+    Se ejecuta normalmente durante la migración inicial.
+    """
 def create_stored_procedures():
     with connection.cursor() as cursor:
         cursor.execute("""
@@ -123,6 +132,10 @@ def create_stored_procedures():
             $$;
         """)
 
+"""
+    Función para crear triggers en la base de datos.
+    Se ejecuta normalmente durante la migración inicial.
+    """
 def create_triggers():
     with connection.cursor() as cursor:
         cursor.execute("""
@@ -147,7 +160,9 @@ def create_triggers():
             EXECUTE FUNCTION log_lesson_registration();
         """)
 
-#cliente
+# ======================================================================
+# VISTAS BASADAS EN CLASES PARA CRUD DE CLIENTES
+# =====================================================================
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 from django.urls import reverse_lazy
 from django.contrib.messages.views import SuccessMessageMixin
@@ -183,7 +198,7 @@ class ClientListView(ListView):
 class ClientCreateView(SuccessMessageMixin, CreateView):
     model = Client
     form_class = ClientForm
-    template_name = 'clients/client_interview_form.html'  # Nueva plantilla
+    template_name = 'clients/client_interview_form.html'  
     success_url = reverse_lazy('client_list')
     success_message = "Cliente y entrevista creados exitosamente"
     
@@ -219,96 +234,20 @@ class ClientDeleteView(DeleteView):
     model = Client
     template_name = 'clients/client_confirm_delete.html'
     success_url = reverse_lazy('client_list')
+
+class ClientDetailView(DetailView):
+    model = Client
+    template_name = 'clients/client_detail.html'
     
-# driving_school/views.py
-from django.db.models import Count, Sum, Case, When, IntegerField
-from django.db.models.functions import TruncDate
-import matplotlib.pyplot as plt
-import io
-import urllib, base64
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['interview'] = self.object.interview
+        return context
 
-@login_required
-def reports_view(request):
-    """
-    Generate and display various reports and statistics about driving school operations.
-    Includes lessons by client, today's schedule, exam results by instructor, and monthly lesson trends.
-    """
-    try:
-        # Report 1: Top 10 clients by number of lessons
-        lessons_by_client = Client.objects.annotate(
-            total_lessons=Count('lesson'),
-            total_kilometers=Sum('lesson__kilometers')
-        ).order_by('-total_lessons')[:10]
-        
-        # Report 2: Today's schedule
-        today_lessons = Lesson.objects.filter(date=date.today()).select_related(
-            'client', 'instructor__user', 'vehicle'
-        ).order_by('time')
-        
-        # Report 3: Exam results by instructor
-        exam_stats = Employee.objects.filter(
-            role__in=['Instructor', 'Instructor Senior']
-        ).annotate(
-            approved=Count(
-                Case(
-                    When(exam__result=True, then=1),
-                    output_field=IntegerField()
-                )
-            ),
-            failed=Count(
-                Case(
-                    When(exam__result=False, then=1),
-                    output_field=IntegerField()
-                )
-            )
-        ).order_by('-approved')
-        
-        # Generate monthly lesson chart
-        plt.switch_backend('Agg')
-        lessons_by_month = Lesson.objects.annotate(
-            month=TruncMonth('date')
-        ).values('month').annotate(
-            count=Count('id_lesson')  
-        ).order_by('month')
-        
-        if lessons_by_month:
-            months = [l['month'].strftime('%Y-%m') for l in lessons_by_month]
-            counts = [l['count'] for l in lessons_by_month]
-            
-            plt.figure(figsize=(10, 5))
-            plt.bar(months, counts)
-            plt.title('Lecciones por mes')
-            plt.xlabel('Mes')
-            plt.ylabel('Número de lecciones')
-            plt.xticks(rotation=45)
-            plt.tight_layout()
-            
-            # Convert plot to PNG image
-            buffer = io.BytesIO()
-            plt.savefig(buffer, format='png')
-            buffer.seek(0)
-            image_png = buffer.getvalue()
-            buffer.close()
-            plt.close()
-            
-            graphic = base64.b64encode(image_png).decode('utf-8')
-        else:
-            graphic = None
-            
-        context = {
-            'lessons_by_client': lessons_by_client,
-            'today_lessons': today_lessons,
-            'exam_stats': exam_stats,
-            'graphic': graphic,
-        }
-        return render(request, 'reports.html', context)
-        
-    except Exception as e:
-        logger.error(f"Error generating reports: {str(e)}")
-        messages.error(request, "Error generating reports. Please try again later.")
-        return redirect('dashboard')
 
-# Siempre usar parámetros en consultas SQL
+# ======================================================================
+# VISTAS GENERALES DEL SISTEMA
+# ======================================================================
 def safe_query(request):
     search = request.GET.get('search')
     with connection.cursor() as cursor:
@@ -340,6 +279,9 @@ from .models import Branch
 from .forms import BranchForm  
 from django.db.models import Q
 
+# ======================================================================
+# VISTAS BASADAS EN CLASES PARA CRUD DE sucursales
+# =====================================================================
 class BranchListView(ListView):
     model = Branch
     template_name = 'branch_list.html'
@@ -386,6 +328,9 @@ class BranchDeleteView(DeleteView):
 from .models import Employee
 from .forms import EmployeeForm
 
+# ======================================================================
+# VISTAS BASADAS EN CLASES PARA CRUD DE Empleados
+# =====================================================================
 class EmployeeListView(ListView):
     model = Employee
     template_name = 'employees/employee_list.html'
@@ -436,6 +381,9 @@ class EmployeeDeleteView(DeleteView):
 from .models import Lesson
 from .forms import LessonForm
 
+# ======================================================================
+# VISTAS BASADAS EN CLASES PARA CRUD DE lecciones
+# =====================================================================
 class LessonListView(ListView):
     model = Lesson
     template_name = 'lessons/lesson_list.html'
@@ -486,7 +434,10 @@ class LessonDetailView(DetailView):
     model = Lesson
     template_name = 'lessons/lesson_detail.html'
 
-#examenes
+
+# ======================================================================
+# VISTAS BASADAS EN CLASES PARA CRUD DE Examenes
+# =====================================================================
 class ExamListView(ListView):
     model = Exam
     template_name = 'exams/exam_list.html'
@@ -537,7 +488,9 @@ class ExamDetailView(DetailView):
     template_name = 'exams/exam_detail.html'
 
 
-#auto
+# ======================================================================
+# VISTAS BASADAS EN CLASES PARA CRUD DE Autos
+# =====================================================================
 class VehicleListView(ListView):
     model = Vehicle
     template_name = 'vehicles/vehicle_list.html'
@@ -587,15 +540,9 @@ class VehicleDetailView(DetailView):
     model = Vehicle
     template_name = 'vehicles/vehicle_detail.html'
 
-class ClientDetailView(DetailView):
-    model = Client
-    template_name = 'clients/client_detail.html'
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['interview'] = self.object.interview
-        return context
-    
+# ======================================================================
+# VISTA entrevistas 
+# =====================================================================    
 class InterviewUpdateView(SuccessMessageMixin, UpdateView):
     model = Interview
     form_class = InterviewForm
@@ -609,10 +556,10 @@ from django.db import connection
 from django.core.paginator import Paginator
 from .forms import ReportFilterForm
 from django.http import HttpResponse
-from django.template.loader import get_template
-from xhtml2pdf import pisa
 
-@permission_required('driving_school.view_reports')
+# ======================================================================
+# VISTAS PARA REPORTES
+# ======================================================================
 def reports_dashboard(request):
     """Vista principal del dashboard de reportes"""
     report_types = [
@@ -658,7 +605,7 @@ def get_report_view(request, report_type):
         data = get_client_instructor_data(filters)
     
     # Paginación
-    paginator = Paginator(data, 25)  # 25 items por página
+    paginator = Paginator(data, 10) 
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
@@ -670,13 +617,15 @@ def get_report_view(request, report_type):
     }
     
     if request.GET.get('export') == 'pdf':
-        return generate_pdf_report(context, report_type)
+        return generate_pdf_report(request, context, report_type)
     
     return render(request, 'reports/report_results.html', context)
 
-# Funciones específicas para cada reporte
+# ======================================================================
+# FUNCIONES AUXILIARES PARA REPORTES
+# ======================================================================
 def get_client_progress_data(filters):
-    """Reporte de progreso de clientes"""
+    """Reporte de progreso de clientes (versión corregida)"""
     with connection.cursor() as cursor:
         query = """
             SELECT 
@@ -707,100 +656,78 @@ def get_client_progress_data(filters):
             
         if filters['branch']:
             query += " AND b.id_branch = %s"
-            params.append(filters['branch'])
+            params.append(filters['branch'].id_branch)
             
         query += " GROUP BY c.id_client, b.name ORDER BY client_name"
         
         cursor.execute(query, params)
         columns = [col[0] for col in cursor.description]
         return [dict(zip(columns, row)) for row in cursor.fetchall()]
+    
+from django.db.models.functions import ExtractYear
+from django.db.models import Count, Sum, Avg
 
 def get_vehicle_usage_data(filters):
-    """Reporte de uso de vehículos"""
-    with connection.cursor() as cursor:
-        query = """
-            SELECT 
-                v.id_vehicle,
-                v.plate_number,
-                v.model,
-                v.year,
-                COUNT(l.id_lesson) AS total_lessons,
-                SUM(l.kilometers) AS total_kilometers,
-                AVG(l.kilometers) AS avg_kilometers_per_lesson
-            FROM 
-                driving_school_vehicle v
-            LEFT JOIN 
-                driving_school_lesson l ON v.id_vehicle = l.vehicle_id
-            WHERE 1=1
-        """
+    """Reporte de uso de vehículos usando ORM"""
+    from .models import Vehicle
+    
+    queryset = Vehicle.objects.annotate(
+        year=ExtractYear('inspection_date'),
+        total_lessons=Count('lesson', distinct=True),
+        total_kilometers=Sum('lesson__kilometers'),
+        avg_kilometers_per_lesson=Avg('lesson__kilometers')
+    ).order_by('-total_lessons')
+    
+    if filters['start_date']:
+        queryset = queryset.filter(lesson__date__gte=filters['start_date'])
         
-        params = []
+    if filters['end_date']:
+        queryset = queryset.filter(lesson__date__lte=filters['end_date'])
         
-        if filters['start_date']:
-            query += " AND l.date >= %s"
-            params.append(filters['start_date'])
-            
-        if filters['end_date']:
-            query += " AND l.date <= %s"
-            params.append(filters['end_date'])
-            
-        if filters['vehicle']:
-            query += " AND v.id_vehicle = %s"
-            params.append(filters['vehicle'])
-            
-        query += " GROUP BY v.id_vehicle ORDER BY total_lessons DESC"
-        
-        cursor.execute(query, params)
-        columns = [col[0] for col in cursor.description]
-        return [dict(zip(columns, row)) for row in cursor.fetchall()]
+    if filters['vehicle']:
+        queryset = queryset.filter(id_vehicle=filters['vehicle'].id_vehicle)
+    
+    return list(queryset.values(
+        'id_vehicle',
+        'license_plate',
+        'model',
+        'year',
+        'total_lessons',
+        'total_kilometers',
+        'avg_kilometers_per_lesson'
+    ))
+from django.db.models import Count, Avg, F, Q, Sum, FloatField
+from .models import Employee, Lesson
 
 def get_instructor_hours_data(filters):
-    """Reporte de horas de instructores"""
-    with connection.cursor() as cursor:
-        query = """
-            SELECT 
-                e.id_employee,
-                u.first_name || ' ' || u.last_name AS instructor_name,
-                b.name AS branch_name,
-                COUNT(l.id_lesson) AS total_lessons,
-                COUNT(DISTINCT l.client_id) AS total_clients
-            FROM 
-                driving_school_employee e
-            JOIN 
-                auth_user u ON e.user_id = u.id
-            LEFT JOIN 
-                driving_school_lesson l ON e.id_employee = l.instructor_id
-            JOIN 
-                driving_school_branch b ON e.branch_id = b.id_branch
-            WHERE e.role = 'instructor'
-        """
-        
-        params = []
-        
-        if filters['start_date']:
-            query += " AND l.date >= %s"
-            params.append(filters['start_date'])
-            
-        if filters['end_date']:
-            query += " AND l.date <= %s"
-            params.append(filters['end_date'])
-            
-        if filters['branch']:
-            query += " AND b.id_branch = %s"
-            params.append(filters['branch'])
-            
-        if filters['instructor']:
-            query += " AND e.id_employee = %s"
-            params.append(filters['instructor'])
-            
-        query += " GROUP BY e.id_employee, u.first_name, u.last_name, b.name ORDER BY total_lessons DESC"
-        
-        cursor.execute(query, params)
-        columns = [col[0] for col in cursor.description]
-        return [dict(zip(columns, row)) for row in cursor.fetchall()]
+    """Obtener datos de horas de instructores con filtros corregido."""
+    queryset = Employee.objects.filter(role='instructor')
+
+    if filters.get('start_date'):
+        queryset = queryset.filter(lesson__date__gte=filters['start_date'])
+    if filters.get('end_date'):
+        queryset = queryset.filter(lesson__date__lte=filters['end_date'])
+    if filters.get('branch'):
+        queryset = queryset.filter(lesson__branch=filters['branch'])
+    if filters.get('instructor'):
+        queryset = queryset.filter(id_employee=filters['instructor'].id_employee)
+    if filters.get('lesson_type'):
+        queryset = queryset.filter(lesson__type=filters['lesson_type'])
+
+    queryset = queryset.annotate(
+        total_lessons=Count('lesson', distinct=True),
+    ).order_by('-total_lessons')
+
+    return list(queryset.values(
+        'id_employee',
+        'user__first_name',
+        'user__last_name',
+        'total_lessons',
+    ))
+
 
 def get_scheduled_lessons_data(filters):
-    """Reporte de lecciones programadas (mejorada)"""
+    """Reporte de lecciones programadas corregido para devolver lista."""
     query = Lesson.objects.select_related(
         'client', 'instructor__user', 'vehicle', 'branch'
     ).order_by('date', 'time')
@@ -825,77 +752,111 @@ def get_scheduled_lessons_data(filters):
         
     if filters['lesson_type']:
         query = query.filter(type=filters['lesson_type'])
-    
-    return query
+
+    # Convertir a lista de dicts para mayor compatibilidad en template
+    result = []
+    for lesson in query:
+        result.append({
+            'date': lesson.date,
+            'time': lesson.time,
+            'client_name': f"{lesson.client.first_name} {lesson.client.last_name}",
+            'instructor_name': f"{lesson.instructor.user.first_name} {lesson.instructor.user.last_name}",
+            'vehicle': lesson.vehicle.license_plate,
+            'lesson_type': lesson.type,
+            'id': lesson.id_lesson,
+        })
+    return result
+
+from django.db.models import Count
 
 def get_client_instructor_data(filters):
-    """Reporte de clientes por instructor/sucursal (mejorada)"""
-    with connection.cursor() as cursor:
-        query = """
-            SELECT
-                c.id_client,
-                c.first_name || ' ' || c.last_name AS client_name,
-                e.user.first_name || ' ' || e.user.last_name AS instructor_name,
-                b.name AS branch_name,
-                b.city,
-                COUNT(l.id_lesson) AS total_lessons
-            FROM
-                driving_school_client c
-            JOIN
-                driving_school_branch b ON c.branch_id = b.id_branch
-            LEFT JOIN
-                driving_school_interview i ON c.id_client = i.client_id
-            LEFT JOIN
-                driving_school_employee e ON i.instructor_id = e.id_employee
-            LEFT JOIN
-                driving_school_lesson l ON c.id_client = l.client_id
-            WHERE 1=1
-        """
-        
-        params = []
-        
-        if filters['branch']:
-            query += " AND b.id_branch = %s"
-            params.append(filters['branch'])
-            
-        if filters['instructor']:
-            query += " AND e.id_employee = %s"
-            params.append(filters['instructor'])
-            
-        if filters['client']:
-            query += " AND c.id_client = %s"
-            params.append(filters['client'])
-            
-        if filters['start_date']:
-            query += " AND l.date >= %s"
-            params.append(filters['start_date'])
-            
-        if filters['end_date']:
-            query += " AND l.date <= %s"
-            params.append(filters['end_date'])
-            
-        query += " GROUP BY c.id_client, e.user.first_name, e.user.last_name, b.name, b.city"
-        query += " ORDER BY client_name"
-        
-        cursor.execute(query, params)
-        columns = [col[0] for col in cursor.description]
-        return [dict(zip(columns, row)) for row in cursor.fetchall()]
+    """Reporte de clientes por instructor/sucursal corregido usando ORM"""
+    from .models import Client
 
-def generate_pdf_report(context, report_type):
-    """Genera un PDF profesional del reporte"""
-    template_path = 'reports/pdf_template.html'
-    template = get_template(template_path)
-    html = template.render(context)
+    queryset = Client.objects.all().select_related('branch')
+
+    if filters.get('branch'):
+        queryset = queryset.filter(branch=filters['branch'])
     
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="{report_type}_report.pdf"'
+    if filters.get('client'):
+        queryset = queryset.filter(id_client=filters['client'].id_client)
     
-    pisa_status = pisa.CreatePDF(html, dest=response)
-    
-    if pisa_status.err:
-        return HttpResponse('Error al generar PDF', status=500)
-    
-    return response
+    queryset = queryset.annotate(
+        total_lessons=Count('lesson', distinct=True),
+        instructor_name=F('lesson__instructor__user__first_name'),
+        instructor_lastname=F('lesson__instructor__user__last_name'),
+        branch_name=F('branch__name'),
+        branch_city=F('branch__city'),
+    )
+
+    if filters.get('instructor'):
+        queryset = queryset.filter(lesson__instructor=filters['instructor'])
+
+    if filters.get('start_date'):
+        queryset = queryset.filter(lesson__date__gte=filters['start_date'])
+    if filters.get('end_date'):
+        queryset = queryset.filter(lesson__date__lte=filters['end_date'])
+
+    queryset = queryset.order_by('first_name', 'last_name').distinct()
+
+    result = []
+    for c in queryset:
+        result.append({
+            'id_client': c.id_client,
+            'client_name': f"{c.first_name} {c.last_name}",
+            'instructor_name': f"{c.instructor_name or ''} {c.instructor_lastname or ''}".strip(),
+            'branch_name': c.branch_name,
+            'branch_city': c.branch_city,
+            'total_lessons': c.total_lessons,
+        })
+    return result
+
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+from weasyprint import CSS, HTML
+
+def generate_pdf_report(request, context, report_type):
+    """Genera PDF usando WeasyPrint con manejo mejorado de errores"""
+    try:
+        # Asegurar que el contexto tenga los valores necesarios
+        context.update({
+            'report_title': get_report_title(report_type),
+            'now': datetime.now(),
+        })
+        
+        # Renderizar la plantilla HTML
+        html_string = render_to_string('reports/pdf_template.html', context)
+        
+        # Configuración de WeasyPrint
+        html = HTML(
+            string=html_string,
+            base_url=request.build_absolute_uri('/')
+        )
+        
+        # Generar PDF
+        pdf = html.write_pdf(stylesheets=[
+            CSS(string='@page { size: A4; margin: 1.5cm; }')
+        ])
+        
+        # Crear respuesta HTTP
+        response = HttpResponse(pdf, content_type='application/pdf')
+        filename = f"{report_type}_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        return response
+        
+    except Exception as e:
+        # Log del error
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error al generar PDF: {str(e)}", exc_info=True)
+        
+        # Mensaje de error amigable
+        error_msg = "Ocurrió un error al generar el PDF. Por favor intente nuevamente."
+        if settings.DEBUG:
+            error_msg += f" Detalle técnico: {str(e)}"
+        
+        return HttpResponse(error_msg, status=500)
 
 def get_report_title(report_type):
     """Devuelve el título del reporte según su tipo"""

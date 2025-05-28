@@ -1,0 +1,32 @@
+<div class="table-responsive">
+    <table class="table table-striped table-bordered">
+        <thead class="thead-dark">
+            <tr>
+                <th>ID Vehículo</th>
+                <th>Placa</th>  <!-- Cambiado de "Placa Número" -->
+                <th>Modelo</th>
+                <th>Año</th>
+                <th>Total Lecciones</th>
+                <th>Total Km</th>
+                <th>Km Promedio</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in data %}
+            <tr>
+                <td>{{ item.id_vehicle }}</td>
+                <td>{{ item.license_plate }}</td>  <!-- Cambiado de plate_number -->
+                <td>{{ item.model }}</td>
+                <td>{{ item.year }}</td>
+                <td>{{ item.total_lessons|default:"0" }}</td>
+                <td>{{ item.total_kilometers|default:"0"|floatformat:2 }} km</td>
+                <td>{{ item.avg_kilometers_per_lesson|default:"0"|floatformat:2 }} km</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center">No se encontraron resultados</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

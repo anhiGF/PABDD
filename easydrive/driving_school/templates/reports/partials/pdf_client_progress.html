@@ -1,0 +1,24 @@
+<table>
+    <thead>
+        <tr>
+            <th>ID Cliente</th>
+            <th>Nombre</th>
+            <th>Total Lecciones</th>
+            <th>Última Lección</th>
+            <th>Licencia Provisional</th>
+            <th>Sucursal</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in data %}
+        <tr>
+            <td>{{ item.id_client }}</td>
+            <td>{{ item.client_name }}</td>
+            <td>{{ item.total_lessons|default:"0" }}</td>
+            <td>{{ item.last_lesson_date|date:"d/m/Y"|default:"N/A" }}</td>
+            <td>{% if item.provisional_license %}Sí{% else %}No{% endif %}</td>
+            <td>{{ item.branch_name }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

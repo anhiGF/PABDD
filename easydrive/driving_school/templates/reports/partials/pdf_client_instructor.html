@@ -1,0 +1,24 @@
+<table>
+    <thead>
+        <tr>
+            <th>ID Cliente</th>
+            <th>Nombre</th>
+            <th>Instructor</th>
+            <th>Sucursal</th>
+            <th>Ciudad</th>
+            <th>Total Lecciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in data %}
+        <tr>
+            <td>{{ item.id_client }}</td>
+            <td>{{ item.client_name }}</td>
+            <td>{{ item.instructor_name|default:"No asignado" }}</td>
+            <td>{{ item.branch_name }}</td>
+            <td>{{ item.city }}</td>
+            <td>{{ item.total_lessons|default:"0" }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

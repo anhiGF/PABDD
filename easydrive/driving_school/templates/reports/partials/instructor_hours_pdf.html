@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ report_title }}</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 1cm;
+            
+            @top-center {
+                content: "{{ report_title }}";
+                font-size: 14pt;
+            }
+            
+            @bottom-center {
+                content: "Página " counter(page) " de " counter(pages);
+                font-size: 10pt;
+            }
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10pt;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        th {
+            background-color: #3498db;
+            color: white;
+            padding: 5px;
+            text-align: left;
+        }
+        
+        td {
+            padding: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .header-info {
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-info">
+        <p><strong>Generado el:</strong> {% now "DATETIME_FORMAT" %}</p>
+        {% if form.cleaned_data.instructor %}
+        <p><strong>Instructor:</strong> {{ form.cleaned_data.instructor.user.get_full_name }}</p>
+        {% endif %}
+        {% if form.cleaned_data.start_date or form.cleaned_data.end_date %}
+        <p>
+            <strong>Período:</strong> 
+            {% if form.cleaned_data.start_date %}{{ form.cleaned_data.start_date|date:"d/m/Y" }}{% endif %}
+            {% if form.cleaned_data.end_date %} - {{ form.cleaned_data.end_date|date:"d/m/Y" }}{% endif %}
+        </p>
+        {% endif %}
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>ID Instructor</th>
+                <th>Nombre</th>
+                <th>Sucursal</th>
+                <th>Total Lecciones</th>
+                <th>Clientes Únicos</th>
+                <th>Promedio Lecciones/Cliente</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for instructor in instructors %}
+            <tr>
+                <td>{{ instructor.id_employee }}</td>
+                <td>{{ instructor.user.get_full_name }}</td>
+                <td>{{ instructor.branch.name }}</td>
+                <td>{{ instructor.total_lessons }}</td>
+                <td>{{ instructor.unique_clients }}</td>
+                <td>{{ instructor.avg_lessons_per_client|floatformat:1 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

@@ -91,6 +91,11 @@ class Vehicle(models.Model):
         return 'danger'
 
 class Lesson(models.Model):
+    class Meta:
+        indexes = [
+            models.Index(fields=['date', 'time']),
+            models.Index(fields=['client']),
+        ]
     TYPES = [
         ('Individual', 'Individual'),
         ('Paquete', 'Paquete'),
@@ -111,6 +116,8 @@ class Lesson(models.Model):
 
 
 class LessonLog(models.Model):
+    db_table = 'driving_school_lessonlog_partitioned'
+    partitioned = True
     id_log = models.AutoField(primary_key=True)
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
     registration_date = models.DateTimeField(auto_now_add=True)
@@ -129,3 +136,8 @@ class Exam(models.Model):
     failure_reason = models.TextField(blank=True)
     client = models.ForeignKey(Client, on_delete=models.CASCADE)
     instructor = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True)
+
+LESSON_TYPES = [
+        ('Individual', 'Individual'),
+        ('Paquete', 'Paquete'),
+    ]

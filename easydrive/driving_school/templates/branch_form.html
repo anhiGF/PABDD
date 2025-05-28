@@ -4,6 +4,19 @@
 <h2>{% if object %}Editar{% else %}Nueva{% endif %} Sucursal</h2>
 <form method="post">
     {% csrf_token %}
+    <!-- Mensajes de error generales -->
+    {% if form.errors %}
+        <div class="alert alert-danger">
+            <strong>Error:</strong> Por favor corrige los siguientes errores.
+            <ul>
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
     {{ form.as_p }}
     <button type="submit" class="btn btn-primary">Guardar</button>
     <a href="{% url 'branch_list' %}" class="btn btn-secondary">Cancelar</a>
