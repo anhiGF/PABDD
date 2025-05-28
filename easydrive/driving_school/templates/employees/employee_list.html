@@ -4,18 +4,18 @@
 <div class="container mt-4">
     <div class="card">
         <div class="card-body">
-            <h5 class="card-title">Lista de Sucursales</h5>
+            <h5 class="card-title">Lista de Empleados</h5>
             
-            <!-- Barra de búsqueda mejorada -->
+            <!-- Barra de búsqueda -->
             <div class="form-inline mb-3">
                 <div class="input-group">
                     <input type="text" 
                            class="form-control" 
-                           id="buscarSucursal" 
-                           placeholder="Buscar sucursal..."
-                           hx-get="{% url 'branch_list' %}"
+                           id="buscarEmpleado" 
+                           placeholder="Buscar empleado..."
+                           hx-get="{% url 'employee_list' %}"
                            hx-trigger="keyup changed delay:300ms, search"
-                           hx-target="#tablaSucursales"
+                           hx-target="#tablaEmpleados"
                            hx-swap="innerHTML"
                            hx-indicator=".search-indicator"
                            name="q"
@@ -28,29 +28,29 @@
                         </span>
                     </span>
                 </div>
-                <button class="btn btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#modalSucursal">
-                    <i class="bi bi-plus-circle"></i> Nueva Sucursal
+                <button class="btn btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#modalEmpleado">
+                    <i class="bi bi-plus-circle"></i> Nuevo Empleado
                 </button>
             </div>
 
-            <!-- Tabla de sucursales (se actualizará con HTMX) -->
-            <div id="tablaSucursales">
-                {% include 'partials/branch_table.html' %}
+            <!-- Tabla de empleados (se actualizará con HTMX) -->
+            <div id="tablaEmpleados">
+                {% include 'employees/partials/employee_table.html' %}
             </div>
         </div>
     </div>
 </div>
 
-<!-- Modal para nueva sucursal -->
-<div class="modal fade" id="modalSucursal" tabindex="-1" aria-labelledby="modalSucursalLabel" aria-hidden="true">
+<!-- Modal para nuevo empleado -->
+<div class="modal fade" id="modalEmpleado" tabindex="-1" aria-labelledby="modalEmpleadoLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="modalSucursalLabel">Nueva Sucursal</h5>
+                <h5 class="modal-title" id="modalEmpleadoLabel">Nuevo Empleado</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form method="post" action="{% url 'branch_create' %}">
+                <form method="post" action="{% url 'employee_create' %}">
                     {% csrf_token %}
                     {{ form.as_p }}
                     <button type="submit" class="btn btn-primary">Guardar</button>
@@ -60,7 +60,6 @@
     </div>
 </div>
 
-<!-- Script para manejar tooltips después de actualización HTMX -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Inicializar tooltips
@@ -71,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Manejar actualizaciones HTMX
     document.body.addEventListener('htmx:afterSwap', function(evt) {
-        if (evt.detail.target.id === 'tablaSucursales') {
+        if (evt.detail.target.id === 'tablaEmpleados') {
             // Reiniciar tooltips después de actualizar la tabla
             var newTooltips = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             newTooltips.forEach(function(el) {

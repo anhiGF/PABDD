@@ -38,11 +38,18 @@ urlpatterns = [
     path('exams/', views.ExamListView.as_view(), name='exam_list'),
     path('vehicles/', views.VehicleListView.as_view(), name='vehicle_list'),
     path('profile/', views.profile_view, name='profile'),
-     path('employees/', views.EmployeeListView.as_view(), name='employee_list'),
 
      # CRUD sucursales
     path('branch/', views.BranchListView.as_view(), name='branch_list'),
     path('branch/create/', views.BranchCreateView.as_view(), name='branch_create'),
     path('branch/<int:pk>/update/', views.BranchUpdateView.as_view(), name='branch_update'),
     path('branch/<int:pk>/delete/', views.BranchDeleteView.as_view(), name='branch_delete'),
+
+    # CRUD Empeados
+    path('employees/', views.EmployeeListView.as_view(), name='employee_list'),
+    path('employees/create/', views.EmployeeCreateView.as_view(), name='employee_create'),
+    path('employees/<int:pk>/update/', views.EmployeeUpdateView.as_view(), name='employee_update'),
+    path('employees/<int:pk>/delete/', views.EmployeeDeleteView.as_view(), name='employee_delete'),
+
+
 ]

@@ -156,27 +156,47 @@ from .forms import ClientForm, LessonForm
 
 class ClientListView(ListView):
     model = Client
-    template_name = 'client_list.html'
+    template_name = 'clients/client_list.html'
     context_object_name = 'clients'
     paginate_by = 10
+
+    def get_template_names(self):
+        if self.request.headers.get('HX-Request'):
+            return ['clients/partials/client_table.html']
+        return [self.template_name]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        search_query = self.request.GET.get('q', '').strip()
+        
+        if search_query:
+            queryset = queryset.filter(
+                Q(first_name__icontains=search_query) |
+                Q(last_name__icontains=search_query) |
+                Q(email__icontains=search_query) |
+                Q(phone__icontains=search_query) |
+                Q(branch__name__icontains=search_query)
+            )
+        
+        return queryset.order_by('last_name', 'first_name')
 
 class ClientCreateView(SuccessMessageMixin, CreateView):
     model = Client
     form_class = ClientForm
-    template_name = 'client_form.html'
+    template_name = 'clients/client_form.html'
     success_url = reverse_lazy('client_list')
     success_message = "Cliente creado exitosamente"
 
 class ClientUpdateView(SuccessMessageMixin, UpdateView):
     model = Client
     form_class = ClientForm
-    template_name = 'client_form.html'
+    template_name = 'clients/client_form.html'
     success_url = reverse_lazy('client_list')
     success_message = "Cliente actualizado exitosamente"
 
 class ClientDeleteView(DeleteView):
     model = Client
-    template_name = 'client_confirm_delete.html'
+    template_name = 'clients/client_confirm_delete.html'
     success_url = reverse_lazy('client_list')
     
 # driving_school/views.py
@@ -318,6 +338,7 @@ def profile_view(request):
 
 from .models import Branch
 from .forms import BranchForm  
+from django.db.models import Q
 
 class BranchListView(ListView):
     model = Branch
@@ -325,6 +346,24 @@ class BranchListView(ListView):
     context_object_name = 'branches'
     paginate_by = 10
 
+    def get_template_names(self):
+        if self.request.headers.get('HX-Request'):
+            return ['partials/branch_table.html']
+        return [self.template_name]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        search_query = self.request.GET.get('q', '').strip()
+        
+        if search_query:
+            queryset = queryset.filter(
+                Q(name__icontains=search_query) |
+                Q(city__icontains=search_query) |
+                Q(address__icontains=search_query)
+            )
+        
+        return queryset.order_by('name')
+    
 class BranchCreateView(SuccessMessageMixin, CreateView):
     model = Branch
     form_class = BranchForm
@@ -344,14 +383,50 @@ class BranchDeleteView(DeleteView):
     template_name = 'branch_confirm_delete.html'
     success_url = reverse_lazy('branch_list')
 
-from django.views.generic import ListView
 from .models import Employee
+from .forms import EmployeeForm
 
 class EmployeeListView(ListView):
     model = Employee
-    template_name = 'employee_list.html'
+    template_name = 'employees/employee_list.html'
     context_object_name = 'employees'
-    
+    paginate_by = 10
+
+    def get_template_names(self):
+        if self.request.headers.get('HX-Request'):
+            return ['employees/partials/employee_table.html']
+        return [self.template_name]
+
     def get_queryset(self):
-        return Employee.objects.select_related('user', 'branch')
-    
+        queryset = super().get_queryset()
+        search_query = self.request.GET.get('q', '').strip()
+        
+        if search_query:
+            queryset = queryset.filter(
+                Q(user__first_name__icontains=search_query) |
+                Q(user__last_name__icontains=search_query) |
+                Q(role__icontains=search_query) |
+                Q(branch__name__icontains=search_query) |
+                Q(email__icontains=search_query)
+            )
+        
+        return queryset.order_by('user__last_name')
+
+class EmployeeCreateView(SuccessMessageMixin, CreateView):
+    model = Employee
+    form_class = EmployeeForm
+    template_name = 'employees/employee_form.html'
+    success_url = reverse_lazy('employee_list')
+    success_message = "Empleado creado exitosamente"
+
+class EmployeeUpdateView(SuccessMessageMixin, UpdateView):
+    model = Employee
+    form_class = EmployeeForm
+    template_name = 'employees/employee_form.html'
+    success_url = reverse_lazy('employee_list')
+    success_message = "Empleado actualizado exitosamente"
+
+class EmployeeDeleteView(DeleteView):
+    model = Employee
+    template_name = 'employees/employee_confirm_delete.html'
+    success_url = reverse_lazy('employee_list')
