@@ -1,0 +1,103 @@
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Marca</th>
+                <th>Modelo</th>
+                <th>Placa</th>
+                <th>Inspección</th>
+                <th>Instructor</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for vehicle in vehicles %}
+            <tr>
+                <td>{{ vehicle.brand }}</td>
+                <td>{{ vehicle.model }}</td>
+                <td>{{ vehicle.license_plate }}</td>
+                <td>
+                    {% if vehicle.inspection_passed %}
+                        <span class="badge bg-success">{{ vehicle.inspection_date|date:"d/m/Y" }}</span>
+                    {% elif vehicle.inspection_needed %}
+                        <span class="badge bg-warning">{{ vehicle.inspection_date|date:"d/m/Y" }}</span>
+                    {% else %}
+                        <span class="badge bg-danger">{{ vehicle.inspection_date|date:"d/m/Y" }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if vehicle.assigned_instructor %}
+                        {{ vehicle.assigned_instructor.user.get_full_name }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'vehicle_detail' vehicle.id_vehicle %}" 
+                       class="btn btn-sm btn-info"
+                       data-bs-toggle="tooltip" 
+                       title="Detalles">
+                        <i class="bi bi-eye"></i>
+                    </a>
+                    <a href="{% url 'vehicle_update' vehicle.id_vehicle %}" 
+                       class="btn btn-sm btn-warning"
+                       data-bs-toggle="tooltip" 
+                       title="Editar">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                    <a href="{% url 'vehicle_delete' vehicle.id_vehicle %}" 
+                       class="btn btn-sm btn-danger"
+                       data-bs-toggle="tooltip" 
+                       title="Eliminar">
+                        <i class="bi bi-trash"></i>
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center py-4">
+                    {% if request.GET.q %}
+                    No se encontraron vehículos para "{{ request.GET.q }}"
+                    {% else %}
+                    No hay vehículos registrados
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Paginación con soporte HTMX -->
+{% if is_paginated %}
+<nav aria-label="Page navigation">
+    <ul class="pagination">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" 
+               hx-get="{% url 'vehicle_list' %}?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+               hx-target="#tablaVehiculos"
+               hx-swap="innerHTML">&laquo;</a>
+        </li>
+        {% endif %}
+        
+        {% for i in paginator.page_range %}
+        <li class="page-item {% if page_obj.number == i %}active{% endif %}">
+            <a class="page-link" 
+               hx-get="{% url 'vehicle_list' %}?page={{ i }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+               hx-target="#tablaVehiculos"
+               hx-swap="innerHTML">{{ i }}</a>
+        </li>
+        {% endfor %}
+        
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" 
+               hx-get="{% url 'vehicle_list' %}?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+               hx-target="#tablaVehiculos"
+               hx-swap="innerHTML">&raquo;</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}

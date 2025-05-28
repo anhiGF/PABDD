@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Confirmar Eliminación</h5>
+            
+            <p>¿Estás seguro de que deseas eliminar la lección del día {{ object.date|date:"d/m/Y" }} a las {{ object.time|time:"H:i" }} con {{ object.client.first_name }} {{ object.client.last_name }}?</p>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{% url 'lesson_detail' object.id_lesson %}" class="btn btn-secondary me-md-2">Cancelar</a>
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

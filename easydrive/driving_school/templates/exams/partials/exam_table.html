@@ -1,0 +1,107 @@
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Tipo</th>
+                <th>Cliente</th>
+                <th>Instructor</th>
+                <th>Resultado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for exam in exams %}
+            <tr>
+                <td>{{ exam.date|date:"d/m/Y" }}</td>
+                <td>
+                    <span class="badge bg-{% if exam.type == 'Teórico' %}info{% else %}primary{% endif %}">
+                        {{ exam.get_type_display }}
+                    </span>
+                </td>
+                <td>{{ exam.client.first_name }} {{ exam.client.last_name }}</td>
+                <td>
+                    {% if exam.instructor %}
+                        {{ exam.instructor.user.get_full_name }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if exam.result is None %}
+                        <span class="badge bg-secondary">Pendiente</span>
+                    {% elif exam.result %}
+                        <span class="badge bg-success">Aprobado</span>
+                    {% else %}
+                        <span class="badge bg-danger">Reprobado</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'exam_detail' exam.id_exam %}" 
+                       class="btn btn-sm btn-info"
+                       data-bs-toggle="tooltip" 
+                       title="Detalles">
+                        <i class="bi bi-eye"></i>
+                    </a>
+                    <a href="{% url 'exam_update' exam.id_exam %}" 
+                       class="btn btn-sm btn-warning"
+                       data-bs-toggle="tooltip" 
+                       title="Editar">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                    <a href="{% url 'exam_delete' exam.id_exam %}" 
+                       class="btn btn-sm btn-danger"
+                       data-bs-toggle="tooltip" 
+                       title="Eliminar">
+                        <i class="bi bi-trash"></i>
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center py-4">
+                    {% if request.GET.q %}
+                    No se encontraron exámenes para "{{ request.GET.q }}"
+                    {% else %}
+                    No hay exámenes registrados
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Paginación con soporte HTMX -->
+{% if is_paginated %}
+<nav aria-label="Page navigation">
+    <ul class="pagination">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" 
+               hx-get="{% url 'exam_list' %}?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+               hx-target="#tablaExamenes"
+               hx-swap="innerHTML">&laquo;</a>
+        </li>
+        {% endif %}
+        
+        {% for i in paginator.page_range %}
+        <li class="page-item {% if page_obj.number == i %}active{% endif %}">
+            <a class="page-link" 
+               hx-get="{% url 'exam_list' %}?page={{ i }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+               hx-target="#tablaExamenes"
+               hx-swap="innerHTML">{{ i }}</a>
+        </li>
+        {% endfor %}
+        
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" 
+               hx-get="{% url 'exam_list' %}?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+               hx-target="#tablaExamenes"
+               hx-swap="innerHTML">&raquo;</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}

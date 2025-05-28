@@ -27,16 +27,22 @@
                 </td>
                 <td>{{ client.branch.name|default:"-" }}</td>
                 <td>
+                    <a href="{% url 'client_detail' client.id_client %}" 
+                    class="btn btn-sm btn-info"
+                    data-bs-toggle="tooltip" 
+                    title="Ver entrevista">
+                        <i class="bi bi-card-checklist"></i>
+                    </a>
                     <a href="{% url 'client_update' client.id_client %}" 
-                       class="btn btn-sm btn-warning"
-                       data-bs-toggle="tooltip" 
-                       title="Editar">
+                    class="btn btn-sm btn-warning"
+                    data-bs-toggle="tooltip" 
+                    title="Editar">
                         <i class="bi bi-pencil"></i>
                     </a>
                     <a href="{% url 'client_delete' client.id_client %}" 
-                       class="btn btn-sm btn-danger"
-                       data-bs-toggle="tooltip" 
-                       title="Eliminar">
+                    class="btn btn-sm btn-danger"
+                    data-bs-toggle="tooltip" 
+                    title="Eliminar">
                         <i class="bi bi-trash"></i>
                     </a>
                 </td>

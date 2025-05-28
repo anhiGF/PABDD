@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">
+                {% if object %}Editar Examen{% else %}Nuevo Examen{% endif %}
+            </h5>
+            
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="{{ form.date.id_for_label }}" class="form-label">Fecha</label>
+                        {{ form.date }}
+                        {% if form.date.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.date.errors.as_text }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label for="{{ form.type.id_for_label }}" class="form-label">Tipo</label>
+                        {{ form.type }}
+                        {% if form.type.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.type.errors.as_text }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label for="{{ form.result.id_for_label }}" class="form-label">Resultado</label>
+                        {{ form.result }}
+                        {% if form.result.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.result.errors.as_text }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.client.id_for_label }}" class="form-label">Cliente</label>
+                        {{ form.client }}
+                        {% if form.client.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.client.errors.as_text }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="{{ form.instructor.id_for_label }}" class="form-label">Instructor</label>
+                        {{ form.instructor }}
+                        {% if form.instructor.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.instructor.errors.as_text }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mb-3" id="failure-reason-container" style="display: {% if form.result.value == False %}block{% else %}none{% endif %}">
+                    <label for="{{ form.failure_reason.id_for_label }}" class="form-label">Motivo de reprobación</label>
+                    {{ form.failure_reason }}
+                    {% if form.failure_reason.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.failure_reason.errors.as_text }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{% url 'exam_list' %}" class="btn btn-secondary me-md-2">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const resultField = document.getElementById('{{ form.result.id_for_label }}');
+    const failureReasonContainer = document.getElementById('failure-reason-container');
+    
+    resultField.addEventListener('change', function() {
+        if (this.value === 'False') {
+            failureReasonContainer.style.display = 'block';
+        } else {
+            failureReasonContainer.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

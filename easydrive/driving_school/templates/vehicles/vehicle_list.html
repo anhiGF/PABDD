@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Lista de Vehículos</h5>
+            
+            <!-- Barra de búsqueda -->
+            <div class="form-inline mb-3">
+                <div class="input-group">
+                    <input type="text" 
+                           class="form-control" 
+                           id="buscarVehiculo" 
+                           placeholder="Buscar vehículo..."
+                           hx-get="{% url 'vehicle_list' %}"
+                           hx-trigger="keyup changed delay:300ms, search"
+                           hx-target="#tablaVehiculos"
+                           hx-swap="innerHTML"
+                           hx-indicator=".search-indicator"
+                           name="q"
+                           value="{{ request.GET.q|default:'' }}">
+                    <span class="input-group-text">
+                        <span class="search-indicator htmx-indicator">
+                            <span class="spinner-border spinner-border-sm" role="status">
+                                <span class="visually-hidden">Buscando...</span>
+                            </span>
+                        </span>
+                    </span>
+                </div>
+                <button class="btn btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#modalVehiculo">
+                    <i class="bi bi-plus-circle"></i> Nuevo Vehículo
+                </button>
+            </div>
+
+            <!-- Tabla de vehículos (se actualizará con HTMX) -->
+            <div id="tablaVehiculos">
+                {% include 'vehicles/partials/vehicle_table.html' %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para nuevo vehículo -->
+<div class="modal fade" id="modalVehiculo" tabindex="-1" aria-labelledby="modalVehiculoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalVehiculoLabel">Nuevo Vehículo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{% url 'vehicle_create' %}">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Manejar actualizaciones HTMX
+    document.body.addEventListener('htmx:afterSwap', function(evt) {
+        if (evt.detail.target.id === 'tablaVehiculos') {
+            // Reiniciar tooltips después de actualizar la tabla
+            var newTooltips = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            newTooltips.forEach(function(el) {
+                new bootstrap.Tooltip(el);
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

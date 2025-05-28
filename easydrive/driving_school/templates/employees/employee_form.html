@@ -9,40 +9,49 @@
             </h5>
             
             <form method="post">
-                {% csrf_token %}
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="{{ form.user.id_for_label }}" class="form-label">Usuario</label>
-                        {{ form.user }}
-                        {% if form.user.errors %}
-                            <div class="invalid-feedback d-block">
-                                {{ form.user.errors.as_text }}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <label for="{{ form.branch.id_for_label }}" class="form-label">Sucursal</label>
-                        {{ form.branch }}
-                        {% if form.branch.errors %}
-                            <div class="invalid-feedback d-block">
-                                {{ form.branch.errors.as_text }}
-                            </div>
-                        {% endif %}
-                    </div>
+            {% csrf_token %}
+            
+            <!-- Campos de Usuario -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="id_first_name" class="form-label">Nombre</label>
+                    <input type="text" name="first_name" id="id_first_name" class="form-control" 
+                        value="{{ form.first_name.value|default:'' }}" required>
                 </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="{{ form.role.id_for_label }}" class="form-label">Rol</label>
-                        {{ form.role }}
-                        {% if form.role.errors %}
-                            <div class="invalid-feedback d-block">
-                                {{ form.role.errors.as_text }}
-                            </div>
-                        {% endif %}
-                    </div>
+                <div class="col-md-6">
+                    <label for="id_last_name" class="form-label">Apellido</label>
+                    <input type="text" name="last_name" id="id_last_name" class="form-control" 
+                        value="{{ form.last_name.value|default:'' }}" required>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="id_username" class="form-label">Nombre de usuario</label>
+                    <input type="text" name="username" id="id_username" class="form-control" 
+                        value="{{ form.username.value|default:'' }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="id_password" class="form-label">Contraseña</label>
+                    <input type="password" name="password" id="id_password" class="form-control" 
+                        {% if not object %}required{% endif %}>
+                    {% if object %}
+                    <small class="text-muted">Dejar en blanco para no cambiar</small>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Campos originales de empleado -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="{{ form.branch.id_for_label }}" class="form-label">Sucursal</label>
+                    {{ form.branch }}
+                </div>
+                <div class="col-md-6">
+                    <label for="{{ form.role.id_for_label }}" class="form-label">Rol</label>
+                    {{ form.role }}
+                </div>
+            </div>
                     
                     <div class="col-md-6">
                         <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>

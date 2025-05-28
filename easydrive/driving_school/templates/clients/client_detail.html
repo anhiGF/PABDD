@@ -1,0 +1,85 @@
+<!-- clients/templates/clients/client_detail.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Detalle del Cliente</h5>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <h6>Nombre:</h6>
+                    <p>{{ client.first_name }} {{ client.last_name }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h6>Email:</h6>
+                    <p>{{ client.email }}</p>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <h6>Teléfono:</h6>
+                    <p>{{ client.phone|default:"-" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h6>Permiso Provisional:</h6>
+                    <p>
+                        {% if client.provisional_license %}
+                            <span class="badge bg-success">Sí</span>
+                        {% else %}
+                            <span class="badge bg-secondary">No</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <h6>Sucursal:</h6>
+                <p>{{ client.branch.name|default:"-" }}</p>
+            </div>
+            
+            {% if interview %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5>Entrevista Inicial</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6>Fecha:</h6>
+                            <p>{{ interview.date|date:"d/m/Y" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Instructor:</h6>
+                            <p>
+                                {% if interview.instructor %}
+                                    {{ interview.instructor.user.get_full_name }}
+                                {% else %}
+                                    No asignado
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Comentarios:</h6>
+                        <div class="card">
+                            <div class="card-body">
+                                {{ interview.comments|linebreaks }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+                <a href="{% url 'client_list' %}" class="btn btn-secondary me-md-2">Volver</a>
+                <a href="{% url 'client_update' client.id_client %}" class="btn btn-warning me-md-2">Editar</a>
+                <a href="{% url 'interview_update' client.interview.id_interview %}" class="btn btn-info me-md-2">Editar Entrevista</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

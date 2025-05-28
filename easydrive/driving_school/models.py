@@ -1,3 +1,4 @@
+from datetime import date
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
@@ -46,6 +47,14 @@ class Client(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+    
+    # Relación inversa para acceder a la entrevista
+    @property
+    def interview(self):
+        try:
+            return self.interview_set.first()
+        except:
+            return None
 
 class Interview(models.Model):
     id_interview = models.AutoField(primary_key=True)
@@ -64,6 +73,22 @@ class Vehicle(models.Model):
 
     def __str__(self):
         return f"{self.brand} {self.model} - {self.license_plate}"
+    @property
+    def inspection_passed(self):
+        return self.inspection_date >= date.today()
+    
+    @property
+    def inspection_needed(self):
+        today = date.today()
+        return today <= self.inspection_date.replace(year=today.year + 1)
+    
+    @property
+    def inspection_status(self):
+        if self.inspection_passed:
+            return 'success'
+        elif self.inspection_needed:
+            return 'warning'
+        return 'danger'
 
 class Lesson(models.Model):
     TYPES = [
@@ -84,6 +109,13 @@ class Lesson(models.Model):
     class Meta:
         ordering = ['date', 'time']
 
+
+class LessonLog(models.Model):
+    id_log = models.AutoField(primary_key=True)
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
+    registration_date = models.DateTimeField(auto_now_add=True)
+
+    
 class Exam(models.Model):
     TYPES = [
         ('Teórico', 'Teórico'),
@@ -97,8 +129,3 @@ class Exam(models.Model):
     failure_reason = models.TextField(blank=True)
     client = models.ForeignKey(Client, on_delete=models.CASCADE)
     instructor = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True)
-
-class LessonLog(models.Model):
-    id_log = models.AutoField(primary_key=True)
-    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
-    registration_date = models.DateTimeField(auto_now_add=True)

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Lista de Lecciones</h5>
+            
+            <!-- Barra de búsqueda -->
+            <div class="form-inline mb-3">
+                <div class="input-group">
+                    <input type="text" 
+                           class="form-control" 
+                           id="buscarLeccion" 
+                           placeholder="Buscar lección..."
+                           hx-get="{% url 'lesson_list' %}"
+                           hx-trigger="keyup changed delay:300ms, search"
+                           hx-target="#tablaLecciones"
+                           hx-swap="innerHTML"
+                           hx-indicator=".search-indicator"
+                           name="q"
+                           value="{{ request.GET.q|default:'' }}">
+                    <span class="input-group-text">
+                        <span class="search-indicator htmx-indicator">
+                            <span class="spinner-border spinner-border-sm" role="status">
+                                <span class="visually-hidden">Buscando...</span>
+                            </span>
+                        </span>
+                    </span>
+                </div>
+                <button class="btn btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#modalLeccion">
+                    <i class="bi bi-plus-circle"></i> Nueva Lección
+                </button>
+            </div>
+
+            <!-- Tabla de lecciones (se actualizará con HTMX) -->
+            <div id="tablaLecciones">
+                {% include 'lessons/partials/lesson_table.html' %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para nueva lección -->
+<div class="modal fade" id="modalLeccion" tabindex="-1" aria-labelledby="modalLeccionLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalLeccionLabel">Nueva Lección</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{% url 'lesson_create' %}">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Manejar actualizaciones HTMX
+    document.body.addEventListener('htmx:afterSwap', function(evt) {
+        if (evt.detail.target.id === 'tablaLecciones') {
+            // Reiniciar tooltips después de actualizar la tabla
+            var newTooltips = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            newTooltips.forEach(function(el) {
+                new bootstrap.Tooltip(el);
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

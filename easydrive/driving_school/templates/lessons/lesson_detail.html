@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Detalle de Lección</h5>
+            
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <h6>Fecha:</h6>
+                    <p>{{ lesson.date|date:"d/m/Y" }}</p>
+                </div>
+                <div class="col-md-4">
+                    <h6>Hora:</h6>
+                    <p>{{ lesson.time|time:"H:i" }}</p>
+                </div>
+                <div class="col-md-4">
+                    <h6>Tipo:</h6>
+                    <p><span class="badge bg-{% if lesson.type == 'Individual' %}primary{% else %}info{% endif %}">
+                        {{ lesson.get_type_display }}
+                    </span></p>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <h6>Cliente:</h6>
+                    <p>{{ lesson.client.first_name }} {{ lesson.client.last_name }}</p>
+                </div>
+                <div class="col-md-4">
+                    <h6>Instructor:</h6>
+                    <p>
+                        {% if lesson.instructor %}
+                            {{ lesson.instructor.user.get_full_name }}
+                        {% else %}
+                            No asignado
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="col-md-4">
+                    <h6>Vehículo:</h6>
+                    <p>
+                        {% if lesson.vehicle %}
+                            {{ lesson.vehicle.license_plate }} ({{ lesson.vehicle.model }})
+                        {% else %}
+                            No asignado
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <h6>Kilómetros:</h6>
+                    <p>{{ lesson.kilometers }} km</p>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <h6>Progreso:</h6>
+                <div class="card">
+                    <div class="card-body">
+                        {{ lesson.progress|linebreaks }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <a href="{% url 'lesson_list' %}" class="btn btn-secondary me-md-2">Volver</a>
+                <a href="{% url 'lesson_update' lesson.id_lesson %}" class="btn btn-warning me-md-2">Editar</a>
+                <a href="{% url 'lesson_delete' lesson.id_lesson %}" class="btn btn-danger">Eliminar</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

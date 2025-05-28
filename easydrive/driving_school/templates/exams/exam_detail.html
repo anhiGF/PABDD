@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Detalle de Examen</h5>
+            
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <h6>Fecha:</h6>
+                    <p>{{ exam.date|date:"d/m/Y" }}</p>
+                </div>
+                <div class="col-md-4">
+                    <h6>Tipo:</h6>
+                    <p><span class="badge bg-{% if exam.type == 'Teórico' %}info{% else %}primary{% endif %}">
+                        {{ exam.get_type_display }}
+                    </span></p>
+                </div>
+                <div class="col-md-4">
+                    <h6>Resultado:</h6>
+                    <p>
+                        {% if exam.result is None %}
+                            <span class="badge bg-secondary">Pendiente</span>
+                        {% elif exam.result %}
+                            <span class="badge bg-success">Aprobado</span>
+                        {% else %}
+                            <span class="badge bg-danger">Reprobado</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <h6>Cliente:</h6>
+                    <p>{{ exam.client.first_name }} {{ exam.client.last_name }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h6>Instructor:</h6>
+                    <p>
+                        {% if exam.instructor %}
+                            {{ exam.instructor.user.get_full_name }}
+                        {% else %}
+                            No asignado
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            
+            {% if exam.result is False and exam.failure_reason %}
+            <div class="mb-3">
+                <h6>Motivo de reprobación:</h6>
+                <div class="card">
+                    <div class="card-body">
+                        {{ exam.failure_reason|linebreaks }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <a href="{% url 'exam_list' %}" class="btn btn-secondary me-md-2">Volver</a>
+                <a href="{% url 'exam_update' exam.id_exam %}" class="btn btn-warning me-md-2">Editar</a>
+                <a href="{% url 'exam_delete' exam.id_exam %}" class="btn btn-danger">Eliminar</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

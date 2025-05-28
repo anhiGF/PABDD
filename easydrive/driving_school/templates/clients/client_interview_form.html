@@ -1,0 +1,147 @@
+<!-- clients/templates/clients/client_interview_form.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Registro de Nuevo Cliente</h5>
+            
+            <ul class="nav nav-tabs mb-4" id="clientTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="client-tab" data-bs-toggle="tab" data-bs-target="#client" type="button" role="tab">
+                        Datos del Cliente
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="interview-tab" data-bs-toggle="tab" data-bs-target="#interview" type="button" role="tab">
+                        Entrevista Inicial
+                    </button>
+                </li>
+            </ul>
+            
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="tab-content" id="clientTabsContent">
+                    <!-- Pestaña de Datos del Cliente -->
+                    <div class="tab-pane fade show active" id="client" role="tabpanel">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label">Nombre</label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.first_name.errors.as_text }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label">Apellido</label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.last_name.errors.as_text }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.email.errors.as_text }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.phone.id_for_label }}" class="form-label">Teléfono</label>
+                                {{ form.phone }}
+                                {% if form.phone.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.phone.errors.as_text }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    {{ form.provisional_license }}
+                                    <label class="form-check-label" for="{{ form.provisional_license.id_for_label }}">Permiso Provisional</label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.branch.id_for_label }}" class="form-label">Sucursal</label>
+                                {{ form.branch }}
+                                {% if form.branch.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.branch.errors.as_text }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Pestaña de Entrevista -->
+                    <div class="tab-pane fade" id="interview" role="tabpanel">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ interview_form.date.id_for_label }}" class="form-label">Fecha de Entrevista</label>
+                                {{ interview_form.date }}
+                                {% if interview_form.date.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ interview_form.date.errors.as_text }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ interview_form.instructor.id_for_label }}" class="form-label">Instructor</label>
+                                {{ interview_form.instructor }}
+                                {% if interview_form.instructor.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ interview_form.instructor.errors.as_text }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ interview_form.comments.id_for_label }}" class="form-label">Comentarios</label>
+                            {{ interview_form.comments }}
+                            {% if interview_form.comments.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ interview_form.comments.errors.as_text }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+                    <a href="{% url 'client_list' %}" class="btn btn-secondary me-md-2">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Guardar Cliente y Entrevista</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validación antes de enviar el formulario
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        // Puedes agregar validación adicional aquí si es necesario
+    });
+});
+</script>
+{% endblock %}

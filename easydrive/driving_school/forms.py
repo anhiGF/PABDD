@@ -1,6 +1,7 @@
 # driving_school/forms.py
 from django import forms
 from .models import *
+from .models import Exam
 
 class ClientForm(forms.ModelForm):
     class Meta:
@@ -50,54 +51,167 @@ class BranchForm(forms.ModelForm):
             'address': 'Dirección'
         }
 
+from django import forms
+from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import make_password
+from .models import Employee
+
+User = get_user_model()
+
 class EmployeeForm(forms.ModelForm):
+    first_name = forms.CharField(max_length=30, required=True)
+    last_name = forms.CharField(max_length=150, required=True)
+    username = forms.CharField(max_length=150, required=True)
+    password = forms.CharField(
+        max_length=128,
+        required=False,  # No requerido para actualización
+        widget=forms.PasswordInput,
+        help_text="Dejar en blanco para no cambiar (solo actualización)"
+    )
+    email = forms.EmailField(required=True)
+
     class Meta:
         model = Employee
-        fields = ['user', 'branch', 'role', 'phone', 'email']
+        exclude = ['user']
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk and hasattr(self.instance, 'user'):
+            user = self.instance.user
+            self.fields['first_name'].initial = user.first_name
+            self.fields['last_name'].initial = user.last_name
+            self.fields['username'].initial = user.username
+            self.fields['email'].initial = user.email
+            self.fields['password'].required = False
+    
+    def clean_username(self):
+        username = self.cleaned_data['username']
+        if not self.instance.pk and User.objects.filter(username=username).exists():
+            raise forms.ValidationError("Este nombre de usuario ya existe")
+        return username
+    
+    def save(self, commit=True):
+        employee = super().save(commit=False)
+        user_data = {
+            'username': self.cleaned_data['username'],
+            'first_name': self.cleaned_data['first_name'],
+            'last_name': self.cleaned_data['last_name'],
+            'email': self.cleaned_data['email'],
+            'is_active': True
+        }
+        
+        # Manejar la contraseña solo si se proporciona o es un nuevo usuario
+        if 'password' in self.cleaned_data and self.cleaned_data['password']:
+            user_data['password'] = make_password(self.cleaned_data['password'])
+        
+        # Actualizar o crear usuario
+        if self.instance.pk and hasattr(self.instance, 'user'):
+            user = self.instance.user
+            for attr, value in user_data.items():
+                setattr(user, attr, value)
+            user.save()
+        else:
+            user = User.objects.create(**user_data)
+            employee.user = user
+        
+        if commit:
+            employee.save()
+            self.save_m2m()
+        
+        return employee
+
+class LessonForm(forms.ModelForm):
+    class Meta:
+        model = Lesson
+        fields = ['date', 'time', 'type', 'progress', 'kilometers', 'client', 'instructor', 'vehicle']
         widgets = {
-            'user': forms.Select(attrs={'class': 'form-select'}),
-            'branch': forms.Select(attrs={'class': 'form-select'}),
-            'role': forms.Select(attrs={'class': 'form-select'}),
-            'phone': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'type': forms.Select(attrs={'class': 'form-select'}),
+            'progress': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'kilometers': forms.NumberInput(attrs={'class': 'form-control'}),
+            'client': forms.Select(attrs={'class': 'form-select'}),
+            'instructor': forms.Select(attrs={'class': 'form-select'}),
+            'vehicle': forms.Select(attrs={'class': 'form-select'}),
         }
         labels = {
-            'user': 'Usuario',
-            'branch': 'Sucursal',
-            'role': 'Rol',
-            'phone': 'Teléfono',
-            'email': 'Correo Electrónico'
+            'date': 'Fecha',
+            'time': 'Hora',
+            'type': 'Tipo',
+            'progress': 'Progreso',
+            'kilometers': 'Kilómetros',
+            'client': 'Cliente',
+            'instructor': 'Instructor',
+            'vehicle': 'Vehículo'
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['user'].queryset = CustomUser.objects.filter(is_staff=True)
+        self.fields['instructor'].queryset = Employee.objects.filter(role__in=['Instructor', 'Instructor Senior'])
 
-
-# leccion
-class LessonForm(forms.ModelForm):
+class ExamForm(forms.ModelForm):
     class Meta:
-        model = Lesson
-        fields = '__all__'
-    
-    def clean(self):
-        cleaned_data = super().clean()
-        date = cleaned_data.get('date')
-        time = cleaned_data.get('time')
+        model = Exam
+        fields = ['date', 'type', 'result', 'failure_reason', 'client', 'instructor']
+        widgets = {
+            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'type': forms.Select(attrs={'class': 'form-select'}),
+            'result': forms.Select(attrs={'class': 'form-select'}, choices=[(None, '----'), (True, 'Aprobado'), (False, 'Reprobado')]),
+            'failure_reason': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'client': forms.Select(attrs={'class': 'form-select'}),
+            'instructor': forms.Select(attrs={'class': 'form-select'}),
+        }
+        labels = {
+            'date': 'Fecha',
+            'type': 'Tipo',
+            'result': 'Resultado',
+            'failure_reason': 'Motivo de reprobación',
+            'client': 'Cliente',
+            'instructor': 'Instructor'
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['instructor'].queryset = Employee.objects.filter(role__in=['Instructor', 'Instructor Senior'])
+
+class VehicleForm(forms.ModelForm):
+    class Meta:
+        model = Vehicle
+        fields = ['brand', 'model', 'license_plate', 'inspection_date', 'assigned_instructor']
+        widgets = {
+            'brand': forms.TextInput(attrs={'class': 'form-control'}),
+            'model': forms.TextInput(attrs={'class': 'form-control'}),
+            'license_plate': forms.TextInput(attrs={'class': 'form-control'}),
+            'inspection_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'assigned_instructor': forms.Select(attrs={'class': 'form-select'}),
+        }
+        labels = {
+            'brand': 'Marca',
+            'model': 'Modelo',
+            'license_plate': 'Placa',
+            'inspection_date': 'Fecha de Inspección',
+            'assigned_instructor': 'Instructor Asignado'
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['assigned_instructor'].queryset = Employee.objects.filter(
+            role__in=['Instructor', 'Instructor Senior']
+        )
+        self.fields['assigned_instructor'].required = False
+
+class InterviewForm(forms.ModelForm):
+    class Meta:
+        model = Interview
+        fields = ['date', 'comments', 'instructor']
+        widgets = {
+            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'instructor': forms.Select(attrs={'class': 'form-select'}),
+        }
         
-        # Validar que la lección esté dentro del horario laboral
-        if time and (time < time(8, 0) or time > time(20, 0)):
-            raise forms.ValidationError("Las lecciones deben programarse entre 8:00 y 20:00")
-        
-        # Validar que el vehículo esté disponible
-        if date and time and 'vehicle' in cleaned_data:
-            conflicting_lessons = Lesson.objects.filter(
-                date=date,
-                time=time,
-                vehicle=cleaned_data['vehicle']
-            ).exclude(pk=self.instance.pk)
-            
-            if conflicting_lessons.exists():
-                raise forms.ValidationError("El vehículo ya está asignado a otra lección en este horario")
-        
-        return cleaned_data
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['instructor'].queryset = Employee.objects.filter(
+            role__in=['Instructor', 'Instructor Senior', 'Director']
+        )
